@@ -1,0 +1,164 @@
+import java.util.ArrayList;
+import java.util.List;
+
+public class Lexer {
+    public static List<Token> lex(String code) {
+        List<Token> tokens = new ArrayList<>();
+        String[] lines = code.split("\n");
+
+        for (String line : lines) {
+            String[] words = line.split(" ");
+
+            for (String word : words) {
+                if (word.matches("[a-zA-Z]+")) {
+                    tokens.add(new Token("ID", word));
+                } else if (word.matches("\\d+")) {
+                    tokens.add(new Token("NUMBER", word));
+                } else if (word.equals("=")) {
+                    tokens.add(new Token("ASSIGN", word));
+                } else if (word.equals("if")) {
+                    tokens.add(new Token("IF", word));
+                } else if (word.equals("else")) {
+                    tokens.add(new Token("ELSE", word));
+                } else if (word.equals("print")) {
+                    tokens.add(new Token("PRINT", word));
+                }
+            }
+        }
+
+        return tokens;
+    }
+
+    public static void main(String[] args) {
+        String code = "x = 10\nif x > 5\nprint(\"Hello, world!\")";
+        List<Token> tokens = lex(code);
+
+        // Tabela de apresentação dos resultados
+        System.out.println("Token\t\tValor");
+        System.out.println("--------------------------");
+        for (Token token : tokens) {
+            System.out.println(token.getToken() + "\t\t" + token.getValue());
+        }
+    }
+}
+
+class Token {
+    private String token;
+    private String value;
+
+    public Token(String token, String value) {
+        this.token = token;
+        this.value = value;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public String getValue() {
+        return value;
+    }
+}
+
+import java.util.List;
+
+public class Parser {
+    private List<Token> tokens;
+    private int currentTokenIndex;
+
+    public Parser(List<Token> tokens) {
+        this.tokens = tokens;
+        this.currentTokenIndex = 0;
+    }
+
+    public void parseProgram() {
+        while (currentTokenIndex < tokens.size()) {
+            parseStatement();
+        }
+    }
+
+    private void parseStatement() {
+        Token currentToken = getNextToken();
+
+        if (currentToken.getToken().equals("ID")) {
+            parseAssignment();
+        } else if (currentToken.getToken().equals("IF")) {
+            parseIfStatement();
+        } else if (currentToken.getToken().equals("PRINT")) {
+            parseExpression();
+        } else {
+            throw new SyntaxError("Token inesperado: " + currentToken.getToken());
+        }
+    }
+
+    private void parseAssignment() {
+        parseExpression();
+
+        Token currentToken = getNextToken();
+        if (!currentToken.getToken().equals("ASSIGN")) {
+            throw new SyntaxError("Esperado '=' após a expressão, mas encontrado: " + currentToken.getToken());
+        }
+
+        parseExpression();
+    }
+
+    private void parseIfStatement() {
+        parseExpression();
+
+        Token currentToken = getNextToken();
+        if (!currentToken.getToken().equals("IF")) {
+            throw new SyntaxError("Esperado 'if' após a expressão, mas encontrado: " + currentToken.getToken());
+        }
+
+        parseExpression();
+
+        currentToken = getNextToken();
+        if (!currentToken.getToken().equals("ELSE")) {
+            throw new SyntaxError("Esperado 'else' após a expressão if, mas encontrado: " + currentToken.getToken());
+        }
+
+        parseExpression();
+    }
+
+    private void parseExpression() {
+        Token currentToken = getNextToken();
+
+        if (currentToken.getToken().equals("ID")) {
+            System.out.println("Variável encontrada: " + currentToken.getValue());
+        } else if (currentToken.getToken().equals("NUMBER")) {
+            System.out.println("Número encontrado: " + currentToken.getValue());
+        } else {
+            throw new SyntaxError("Token inesperado: " + currentToken.getToken());
+        }
+    }
+
+    private Token getNextToken() {
+        if (currentTokenIndex < tokens.size()) {
+            return tokens.get(currentTokenIndex++);
+        } else {
+            return null;
+        }
+    }
+
+    public static void main(String[] args) {
+        String code = "x = 10\nif x > 5\nprint(\"Hello, world!\")";
+        List<Token> tokens = Lexer.lex(code);
+
+        Parser parser = new Parser(tokens);
+        parser.parseProgram();
+
+        // Tabela de apresentação dos resultados
+        System.out.println("Token\t\tValor");
+        System.out.println("--------------------------");
+        for (Token token : tokens) {
+            System.out.println(token.getToken() + "\t\t" + token.getValue());
+        }
+    }
+}
+
+class SyntaxError extends RuntimeException {
+    public SyntaxError(String message) {
+        super(message);
+    }
+}
+
